@@ -21,6 +21,8 @@ namespace ToidutellimusteSusteem
 
             while (true)
             {
+                Console.Clear();
+
                 Console.WriteLine("\n--- TOIDUTELLIMUSTE SÜSTEEM ---");
                 Console.WriteLine("1. Loo uus toode ja salvesta faili");
                 Console.WriteLine("2. Koosta tellimus");
@@ -60,6 +62,9 @@ namespace ToidutellimusteSusteem
                             Console.WriteLine("Tundmatu valik.");
                             break;
                     }
+
+                    Console.WriteLine("\nVajuta Enter, et jätkata...");
+                    Console.ReadLine();
                 }
                 catch (ArgumentException ex)
                 {
@@ -72,6 +77,8 @@ namespace ToidutellimusteSusteem
 
         static void LooToodeJaSalvestaFaili(List<IValmistatav> saadavalTooted, string failiNimi)
         {
+            Console.Clear();
+
             Console.WriteLine("\n--- UUE TOOTE LOOMINE ---");
             Console.WriteLine("1. Burger");
             Console.WriteLine("2. Pizza");
@@ -101,7 +108,7 @@ namespace ToidutellimusteSusteem
 
                     Console.Write("Sisesta burgeri hind: ");
                     string burgeriHindTekst = Console.ReadLine();
-                    burgeriHindTekst = burgeriHindTekst.Replace(",", ".");
+                    burgeriHindTekst = burgeriHindTekst.Replace(".", ",");
 
                     if (!double.TryParse(burgeriHindTekst, out double burgeriHind))
                     {
@@ -360,6 +367,8 @@ namespace ToidutellimusteSusteem
 
         static void KoostaTellimus(List<IValmistatav> saadavalTooted, List<IValmistatav> tellimus)
         {
+            Console.Clear();
+
             if (saadavalTooted.Count == 0)
             {
                 Console.WriteLine("Saadaval tooteid ei ole. Kõigepealt loo mõni toode.");
