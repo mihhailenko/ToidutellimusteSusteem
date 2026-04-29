@@ -31,7 +31,7 @@ namespace ToidutellimusteSusteem
 
             if (Gaseeritud)
             {
-                lõppHind += .50;
+                lõppHind += 0.50;
             }
 
             return lõppHind;
