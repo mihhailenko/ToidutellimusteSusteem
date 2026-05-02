@@ -28,6 +28,7 @@ namespace ToidutellimusteSusteem
                 Console.WriteLine("2. Koosta tellimus");
                 Console.WriteLine("3. Kuva saadaval tooted");
                 Console.WriteLine("4. Kuva tellimus");
+                Console.WriteLine("5. Vormista ja maksa tellimus");
                 Console.WriteLine("0. Välju");
                 Console.Write("Sisesta oma valik: ");
 
@@ -58,6 +59,9 @@ namespace ToidutellimusteSusteem
                         case 4:
                             KuvaTellimus(tellimus);
                             break;
+                        case 5:
+                            VormistaJaMaksaTellimus(tellimus);
+                            break;
                         default:
                             Console.WriteLine("Tundmatu valik.");
                             break;
@@ -72,7 +76,7 @@ namespace ToidutellimusteSusteem
                 }
             }
 
-            Console.WriteLine("Aitah kasutamise eest! Tulge tagasi mõni kord veel.");
+            Console.WriteLine("Aitäh kasutamise eest! Tulge tagasi mõni kord veel.");
         }
 
         static void LooToodeJaSalvestaFaili(List<IValmistatav> saadavalTooted, string failiNimi)
@@ -322,6 +326,12 @@ namespace ToidutellimusteSusteem
                 return;
             }
 
+            double koguhind = KuvaTellimuseTooted(tellimus);
+            KuvaTellimuseKokkuvote(koguhind);
+        }
+
+        static double KuvaTellimuseTooted(List<IValmistatav> tellimus)
+        {
             double koguhind = 0;
             int järjekorraNumber = 1;
 
@@ -340,7 +350,155 @@ namespace ToidutellimusteSusteem
                 Console.WriteLine($"Hind kokku: {hind:F2} €");
             }
 
-            Console.WriteLine($"\nKogu tellimuse hind: {koguhind:F2} €");
+            return koguhind;
+        }
+
+        static double KuvaTellimuseKokkuvote(double koguhind)
+        {
+            int soodustusProtsent = LeiaSoodustusProtsent(koguhind);
+            double soodustusSumma = ArvutaSoodustusSumma(koguhind, soodustusProtsent);
+            double lõpphind = koguhind - soodustusSumma;
+
+            Console.WriteLine($"\nTellimuse vahesumma: {koguhind:F2} €");
+
+            if (soodustusProtsent > 0)
+            {
+                Console.WriteLine($"Soodustus: {soodustusProtsent}% (-{soodustusSumma:F2} €)");
+            }
+            else
+            {
+                Console.WriteLine("Soodustus puudub.");
+            }
+
+            Console.WriteLine($"Maksmisele kuulub: {lõpphind:F2} €");
+
+            return lõpphind;
+        }
+
+        static int LeiaSoodustusProtsent(double koguhind)
+        {
+            if (koguhind >= 60)
+            {
+                return 15;
+            }
+
+            if (koguhind >= 40)
+            {
+                return 10;
+            }
+
+            if (koguhind >= 25)
+            {
+                return 5;
+            }
+
+            return 0;
+        }
+
+        static double ArvutaSoodustusSumma(double koguhind, int soodustusProtsent)
+        {
+            return koguhind * soodustusProtsent / 100;
+        }
+
+        static void VormistaJaMaksaTellimus(List<IValmistatav> tellimus)
+        {
+            Console.Clear();
+            Console.WriteLine("\n--- TELLIMUSE VORMISTAMINE ---");
+
+            if (tellimus.Count == 0)
+            {
+                Console.WriteLine("Tellimus on tühi. Lisa enne maksmist mõni toode.");
+                return;
+            }
+
+            double koguhind = KuvaTellimuseTooted(tellimus);
+            double makstavSumma = KuvaTellimuseKokkuvote(koguhind);
+
+            Console.WriteLine("\nVali makseviis:");
+            Console.WriteLine("1. Pangakaart");
+            Console.WriteLine("2. Sularaha");
+            Console.WriteLine("0. Katkesta");
+            Console.Write("Sisesta valik: ");
+
+            if (!int.TryParse(Console.ReadLine(), out int valik))
+            {
+                Console.WriteLine("Vigane sisend! Palun sisesta number.");
+                return;
+            }
+
+            bool makseÕnnestus = false;
+
+            switch (valik)
+            {
+                case 1:
+                    makseÕnnestus = MaksaKaardiga(makstavSumma);
+                    break;
+
+                case 2:
+                    makseÕnnestus = MaksaSularahas(makstavSumma);
+                    break;
+
+                case 0:
+                    Console.WriteLine("Tellimuse vormistamine katkestati.");
+                    return;
+
+                default:
+                    Console.WriteLine("Tundmatu makseviis.");
+                    return;
+            }
+
+            if (makseÕnnestus)
+            {
+                Console.WriteLine("\nTellimus on makstud ja kööki saadetud.");
+                Console.WriteLine("Aitäh ostu eest!");
+                tellimus.Clear();
+            }
+            else
+            {
+                Console.WriteLine("\nMakse jäi lõpetamata. Tellimus jäi ostukorvi alles.");
+            }
+        }
+
+        static bool MaksaKaardiga(double makstavSumma)
+        {
+            Console.WriteLine($"\nKaardimakse summa: {makstavSumma:F2} €");
+            Console.Write("Kinnita kaardimakse (jah/ei): ");
+            string vastus = (Console.ReadLine()).ToLower();
+
+            if (vastus == "jah" || vastus == "j")
+            {
+                Console.WriteLine("Kaardimakse õnnestus.");
+                return true;
+            }
+
+            Console.WriteLine("Kaardimakse katkestati.");
+            return false;
+        }
+
+        static bool MaksaSularahas(double makstavSumma)
+        {
+            Console.WriteLine($"\nSularahas tuleb tasuda: {makstavSumma:F2} €");
+            Console.Write("Sisesta kliendilt saadud summa: ");
+            string saadudRahaTekst = Console.ReadLine();
+            saadudRahaTekst = saadudRahaTekst.Replace(",", ".");
+
+            if (!double.TryParse(saadudRahaTekst, NumberStyles.Any, CultureInfo.InvariantCulture, out double saadudRaha))
+            {
+                Console.WriteLine("Vigane sisend! Palun sisesta number.");
+                return false;
+            }
+
+            if (saadudRaha < makstavSumma)
+            {
+                double puuduvSumma = makstavSumma - saadudRaha;
+                Console.WriteLine($"Raha ei piisa. Puudu on {puuduvSumma:F2} €.");
+                return false;
+            }
+
+            double tagasiraha = saadudRaha - makstavSumma;
+            Console.WriteLine($"Makse vastu võetud. Tagasiraha: {tagasiraha:F2} €");
+
+            return true;
         }
     }
 }
