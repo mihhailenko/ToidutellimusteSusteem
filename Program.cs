@@ -14,7 +14,7 @@ namespace ToidutellimusteSusteem
             string failiNimi = "tooted.txt";
 
             // Need tooted loetakse failist ja neid saab kasutada tellimuse koostamiseks
-            List<IValmistatav> saadavalTooted = LaeTootedFailist(failiNimi);
+            List<IValmistatav> saadavalTooted = FailiTöötlus.LaeTootedFailist(failiNimi);
 
             // Siia lisatakse ainult kliendi tellimuse tooted
             List<IValmistatav> tellimus = new List<IValmistatav>();
@@ -247,122 +247,9 @@ namespace ToidutellimusteSusteem
             if (uusToode != null)
             {
                 saadavalTooted.Add(uusToode);
-                SalvestaToodeFaili(uusToode, failiNimi);
+                FailiTöötlus.SalvestaToodeFaili(uusToode, failiNimi);
                 Console.WriteLine("Toode lisatud ja faili salvestatud.");
             }
-        }
-
-        static void SalvestaToodeFaili(IValmistatav toode, string failiNimi)
-        {
-            string rida = "";
-
-            if (toode is Burger burger)
-            {
-                rida = $"Burger;{burger.Nimi};{burger.Hind.ToString(CultureInfo.InvariantCulture)};{burger.Juustuga}";
-            }
-            else if (toode is Pizza pizza)
-            {
-                rida = $"Pizza;{pizza.Nimi};{pizza.Hind.ToString(CultureInfo.InvariantCulture)};{pizza.Läbimõõt}";
-            }
-            else if (toode is Sushi sushi)
-            {
-                rida = $"Sushi;{sushi.Nimi};{sushi.Hind.ToString(CultureInfo.InvariantCulture)};{sushi.TükkideArv}";
-            }
-            else if (toode is Jook jook)
-            {
-                rida = $"Jook;{jook.Nimi};{jook.Hind.ToString(CultureInfo.InvariantCulture)};{jook.Gaseeritud}";
-            }
-            else if (toode is Magustoit magustoit)
-            {
-                rida = $"Magustoit;{magustoit.Nimi};{magustoit.Hind.ToString(CultureInfo.InvariantCulture)};{magustoit.Kalorid}";
-            }
-
-            if (rida != "")
-            {
-                File.AppendAllText(failiNimi, rida + Environment.NewLine);
-            }
-        }
-
-        static List<IValmistatav> LaeTootedFailist(string failiNimi)
-        {
-            List<IValmistatav> tooted = new List<IValmistatav>();
-
-            if (!File.Exists(failiNimi))
-            {
-                return tooted;
-            }
-
-            string[] read = File.ReadAllLines(failiNimi);
-
-            foreach (string rida in read)
-            {
-                if (string.IsNullOrWhiteSpace(rida))
-                {
-                    continue;
-                }
-
-                string[] osad = rida.Split(';');
-
-                if (osad.Length != 4)
-                {
-                    continue;
-                }
-
-                string tüüp = osad[0];
-                string nimi = osad[1];
-
-                if (!double.TryParse(osad[2], NumberStyles.Any, CultureInfo.InvariantCulture, out double hind))
-                {
-                    continue;
-                }
-
-                try
-                {
-                    switch (tüüp)
-                    {
-                        case "Burger":
-                            if (bool.TryParse(osad[3], out bool juustuga))
-                            {
-                                tooted.Add(new Burger(nimi, hind, juustuga));
-                            }
-                            break;
-
-                        case "Pizza":
-                            if (int.TryParse(osad[3], out int läbimõõt))
-                            {
-                                tooted.Add(new Pizza(nimi, hind, läbimõõt));
-                            }
-                            break;
-
-                        case "Sushi":
-                            if (int.TryParse(osad[3], out int tükkideArv))
-                            {
-                                tooted.Add(new Sushi(nimi, hind, tükkideArv));
-                            }
-                            break;
-
-                        case "Jook":
-                            if (bool.TryParse(osad[3], out bool gaseeritud))
-                            {
-                                tooted.Add(new Jook(nimi, hind, gaseeritud));
-                            }
-                            break;
-
-                        case "Magustoit":
-                            if (int.TryParse(osad[3], out int kalorid))
-                            {
-                                tooted.Add(new Magustoit(nimi, hind, kalorid));
-                            }
-                            break;
-                    }
-                }
-                catch (ArgumentException)
-                {
-                    // Kui failis on vigased andmed, siis seda rida ei lisata nimekirja
-                }
-            }
-
-            return tooted;
         }
 
         static void KoostaTellimus(List<IValmistatav> saadavalTooted, List<IValmistatav> tellimus)
