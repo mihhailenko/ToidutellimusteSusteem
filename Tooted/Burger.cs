@@ -37,10 +37,11 @@ namespace ToidutellimusteSusteem
             return lõppHind;
         }
 
-        public override void Kirjelda()
+        public override void Kirjelda(bool kuvaHind = false)
         {
             string juust = Juustuga ? "jah" : "ei";
-            Console.WriteLine($"Burger: {Nimi} | Juustuga: {juust}");
+            string hind = kuvaHind ? $" | Hind: {ArvutaHind():F2} €" : "";
+            Console.WriteLine($"Burger: {Nimi} | Juustuga: {juust}{hind}");
         }
     }
 }

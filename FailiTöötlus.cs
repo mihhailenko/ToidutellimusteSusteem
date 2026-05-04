@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 
 namespace ToidutellimusteSusteem
@@ -13,23 +12,23 @@ namespace ToidutellimusteSusteem
 
             if (toode is Burger burger)
             {
-                rida = $"Burger;{burger.Nimi};{burger.Hind.ToString(CultureInfo.InvariantCulture)};{burger.Juustuga}";
+                rida = $"Burger;{burger.Nimi};{burger.Hind.ToString().Replace(",", ".")};{burger.Juustuga}";
             }
             else if (toode is Pizza pizza)
             {
-                rida = $"Pizza;{pizza.Nimi};{pizza.Hind.ToString(CultureInfo.InvariantCulture)};{pizza.Läbimõõt}";
+                rida = $"Pizza;{pizza.Nimi};{pizza.Hind.ToString().Replace(",", ".")};{pizza.Läbimõõt}";
             }
             else if (toode is Sushi sushi)
             {
-                rida = $"Sushi;{sushi.Nimi};{sushi.Hind.ToString(CultureInfo.InvariantCulture)};{sushi.TükkideArv}";
+                rida = $"Sushi;{sushi.Nimi};{sushi.Hind.ToString().Replace(",", ".")};{sushi.TükkideArv}";
             }
             else if (toode is Jook jook)
             {
-                rida = $"Jook;{jook.Nimi};{jook.Hind.ToString(CultureInfo.InvariantCulture)};{jook.Gaseeritud}";
+                rida = $"Jook;{jook.Nimi};{jook.Hind.ToString().Replace(",", ".")};{jook.Gaseeritud}";
             }
             else if (toode is Magustoit magustoit)
             {
-                rida = $"Magustoit;{magustoit.Nimi};{magustoit.Hind.ToString(CultureInfo.InvariantCulture)};{magustoit.Kalorid}";
+                rida = $"Magustoit;{magustoit.Nimi};{magustoit.Hind.ToString().Replace(",", ".")};{magustoit.Kalorid}";
             }
 
             if (rida != "")
@@ -66,7 +65,9 @@ namespace ToidutellimusteSusteem
                 string tüüp = osad[0];
                 string nimi = osad[1];
 
-                if (!double.TryParse(osad[2], NumberStyles.Any, CultureInfo.InvariantCulture, out double hind))
+                osad[2] = osad[2].Replace(".", ",");
+
+                if (!double.TryParse(osad[2], out double hind))
                 {
                     continue;
                 }

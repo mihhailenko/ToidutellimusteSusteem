@@ -33,7 +33,7 @@ namespace ToidutellimusteSusteem
         }
 
         // Alamklassid peavad ise kirjeldama, kuidas toode välja näeb
-        public abstract void Kirjelda();
+        public abstract void Kirjelda(bool kuvaHind = false);
 
         // Liidese meetodid, mille sisu tuleb alamklassides
         public abstract void Valmista();

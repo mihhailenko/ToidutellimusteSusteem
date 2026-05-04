@@ -46,9 +46,10 @@ namespace ToidutellimusteSusteem
             return lõppHind;
         }
 
-        public override void Kirjelda()
+        public override void Kirjelda(bool kuvaHind = false)
         {
-            Console.WriteLine($"Magustoit: {Nimi} | Kalorid: {Kalorid} kcal");
+            string hind = kuvaHind ? $" | Hind: {ArvutaHind():F2} €" : "";
+            Console.WriteLine($"Magustoit: {Nimi} | Kalorid: {Kalorid} kcal{hind}");
         }
     }
 }

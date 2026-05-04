@@ -39,9 +39,10 @@ namespace ToidutellimusteSusteem
             return Hind * TükkideArv;
         }
 
-        public override void Kirjelda()
+        public override void Kirjelda(bool kuvaHind = false)
         {
-            Console.WriteLine($"Sushi: {Nimi} | Tükke: {TükkideArv} | Ühe tüki hind: {Hind} €");
+            string hind = kuvaHind ? $" | Hind: {ArvutaHind():F2} €" : "";
+            Console.WriteLine($"Sushi: {Nimi} | Tükke: {TükkideArv} | Ühe tüki hind: {Hind:F2} €{hind}");
         }
     }
 }

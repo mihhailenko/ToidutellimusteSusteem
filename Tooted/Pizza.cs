@@ -39,9 +39,10 @@ namespace ToidutellimusteSusteem
             return Hind + Läbimõõt * 0.15;
         }
 
-        public override void Kirjelda()
+        public override void Kirjelda(bool kuvaHind = false)
         {
-            Console.WriteLine($"Pizza: {Nimi} | Läbimõõt: {Läbimõõt} cm");
+            string hind = kuvaHind ? $" | Hind: {ArvutaHind():F2} €" : "";
+            Console.WriteLine($"Pizza: {Nimi} | Läbimõõt: {Läbimõõt} cm{hind}");
         }
     }
 }

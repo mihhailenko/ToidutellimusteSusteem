@@ -37,10 +37,11 @@ namespace ToidutellimusteSusteem
             return lõppHind;
         }
 
-        public override void Kirjelda()
+        public override void Kirjelda(bool kuvaHind = false)
         {
             string gaas = Gaseeritud ? "jah" : "ei";
-            Console.WriteLine($"Jook: {Nimi} | Gaseeritud: {gaas}");
+            string hind = kuvaHind ? $" | Hind: {ArvutaHind():F2} €" : "";
+            Console.WriteLine($"Jook: {Nimi} | Gaseeritud: {gaas}{hind}");
         }
     }
 }
