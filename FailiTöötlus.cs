@@ -6,40 +6,14 @@ namespace ToidutellimusteSusteem
 {
     internal static class FailiTöötlus
     {
-        internal static void SalvestaToodeFaili(IValmistatav toode, string failiNimi)
+        internal static void SalvestaToodeFaili(Toode toode, string failiNimi)
         {
-            string rida = "";
-
-            if (toode is Burger burger)
-            {
-                rida = $"Burger;{burger.Nimi};{burger.Hind.ToString().Replace(",", ".")};{burger.Juustuga}";
-            }
-            else if (toode is Pizza pizza)
-            {
-                rida = $"Pizza;{pizza.Nimi};{pizza.Hind.ToString().Replace(",", ".")};{pizza.Läbimõõt}";
-            }
-            else if (toode is Sushi sushi)
-            {
-                rida = $"Sushi;{sushi.Nimi};{sushi.Hind.ToString().Replace(",", ".")};{sushi.TükkideArv}";
-            }
-            else if (toode is Jook jook)
-            {
-                rida = $"Jook;{jook.Nimi};{jook.Hind.ToString().Replace(",", ".")};{jook.Gaseeritud}";
-            }
-            else if (toode is Magustoit magustoit)
-            {
-                rida = $"Magustoit;{magustoit.Nimi};{magustoit.Hind.ToString().Replace(",", ".")};{magustoit.Kalorid}";
-            }
-
-            if (rida != "")
-            {
-                File.AppendAllText(failiNimi, rida + Environment.NewLine);
-            }
+            File.AppendAllText(failiNimi, toode.KoostaFailiRida() + Environment.NewLine);
         }
 
-        internal static List<IValmistatav> LaeTootedFailist(string failiNimi)
+        internal static List<Toode> LaeTootedFailist(string failiNimi)
         {
-            List<IValmistatav> tooted = new List<IValmistatav>();
+            List<Toode> tooted = new List<Toode>();
 
             if (!File.Exists(failiNimi))
             {
@@ -62,7 +36,11 @@ namespace ToidutellimusteSusteem
                     continue;
                 }
 
-                string tüüp = osad[0];
+                if (!Enum.TryParse(osad[0], out TooteTüüp tüüp))
+                {
+                    continue;
+                }
+
                 string nimi = osad[1];
 
                 osad[2] = osad[2].Replace(".", ",");
@@ -74,42 +52,14 @@ namespace ToidutellimusteSusteem
 
                 try
                 {
-                    switch (tüüp)
+                    if (int.TryParse(osad[3], out int eriomadus))
                     {
-                        case "Burger":
-                            if (bool.TryParse(osad[3], out bool juustuga))
-                            {
-                                tooted.Add(new Burger(nimi, hind, juustuga));
-                            }
-                            break;
-
-                        case "Pizza":
-                            if (int.TryParse(osad[3], out int läbimõõt))
-                            {
-                                tooted.Add(new Pizza(nimi, hind, läbimõõt));
-                            }
-                            break;
-
-                        case "Sushi":
-                            if (int.TryParse(osad[3], out int tükkideArv))
-                            {
-                                tooted.Add(new Sushi(nimi, hind, tükkideArv));
-                            }
-                            break;
-
-                        case "Jook":
-                            if (bool.TryParse(osad[3], out bool gaseeritud))
-                            {
-                                tooted.Add(new Jook(nimi, hind, gaseeritud));
-                            }
-                            break;
-
-                        case "Magustoit":
-                            if (int.TryParse(osad[3], out int kalorid))
-                            {
-                                tooted.Add(new Magustoit(nimi, hind, kalorid));
-                            }
-                            break;
+                        tooted.Add(new Toode(nimi, tüüp, hind, eriomadus));
+                    }
+                    else if (bool.TryParse(osad[3], out bool jahVõiEi))
+                    {
+                        int väärtus = jahVõiEi ? 1 : 0;
+                        tooted.Add(new Toode(nimi, tüüp, hind, väärtus));
                     }
                 }
                 catch (ArgumentException)

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace ToidutellimusteSusteem
 {
@@ -10,23 +9,26 @@ namespace ToidutellimusteSusteem
         {
             Console.InputEncoding = System.Text.Encoding.UTF8;
             Console.OutputEncoding = System.Text.Encoding.UTF8;
+
             string failiNimi = "tooted.txt";
 
             // Need tooted loetakse failist ja neid saab kasutada tellimuse koostamiseks
-            List<IValmistatav> saadavalTooted = FailiTöötlus.LaeTootedFailist(failiNimi);
+            List<Toode> saadavalTooted = FailiTöötlus.LaeTootedFailist(failiNimi);
 
-            // Siia lisatakse ainult kliendi tellimuse tooted
-            List<IValmistatav> tellimus = new List<IValmistatav>();
+            // Kasutajad hoiavad rolliga seotud infot ja kliendi tellimust
+            Klient klient = new Klient("Klient");
+            Admin admin = new Admin("Admin");
+            MakseTeenindus makseTeenindus = new MakseTeenindus();
 
             while (true)
             {
                 Console.Clear();
                 Console.WriteLine("\n--- TOIDUTELLIMUSTE SÜSTEEM ---");
                 Console.WriteLine("Vali roll:");
-                Console.WriteLine("1. Klient - telli toitu ja maksa");
-                Console.WriteLine("2. Admin - lisa ja vaata menüü tooteid");
+                Console.WriteLine($"1. {klient.Roll} - telli toitu ja maksa");
+                Console.WriteLine($"2. {admin.Roll} - lisa ja vaata menüü tooteid");
                 Console.WriteLine("0. Välju");
-                Console.WriteLine($"\nMenüüs tooteid: {saadavalTooted.Count} | Ostukorvis: {tellimus.Count}");
+                Console.WriteLine($"\nMenüüs tooteid: {saadavalTooted.Count} | Ostukorvis: {klient.Tellimus.ToodeteArv}");
 
                 Console.Write("Sisesta oma valik: ");
 
@@ -39,11 +41,11 @@ namespace ToidutellimusteSusteem
                 switch (valik)
                 {
                     case 1:
-                        AvaKliendiMenüü(saadavalTooted, tellimus);
+                        AvaKliendiMenüü(klient, saadavalTooted, makseTeenindus);
                         break;
 
                     case 2:
-                        AvaAdminiMenüü(saadavalTooted, failiNimi);
+                        AvaAdminiMenüü(admin, saadavalTooted, failiNimi);
                         break;
 
                     case 0:
@@ -59,14 +61,13 @@ namespace ToidutellimusteSusteem
             }
         }
 
-
-        static void AvaKliendiMenüü(List<IValmistatav> saadavalTooted, List<IValmistatav> tellimus)
+        static void AvaKliendiMenüü(Klient klient, List<Toode> saadavalTooted, MakseTeenindus makseTeenindus)
         {
             while (true)
             {
                 Console.Clear();
                 Console.WriteLine("\n--- KLIENDI MENÜÜ ---");
-                Console.WriteLine($"Ostukorvis: {tellimus.Count} toodet");
+                Console.WriteLine($"Ostukorvis: {klient.Tellimus.ToodeteArv} toodet");
                 Console.WriteLine("1. Lisa toode ostukorvi");
                 Console.WriteLine("2. Vaata saadaval tooteid");
                 Console.WriteLine("3. Vaata ostukorvi");
@@ -90,7 +91,7 @@ namespace ToidutellimusteSusteem
                     switch (valik)
                     {
                         case 1:
-                            KoostaTellimus(saadavalTooted, tellimus);
+                            KoostaTellimus(saadavalTooted, klient.Tellimus);
                             break;
 
                         case 2:
@@ -98,11 +99,11 @@ namespace ToidutellimusteSusteem
                             break;
 
                         case 3:
-                            KuvaTellimus(tellimus);
+                            KuvaTellimus(klient.Tellimus);
                             break;
 
                         case 4:
-                            VormistaJaMaksaTellimus(tellimus);
+                            VormistaJaMaksaTellimus(klient, makseTeenindus);
                             break;
 
                         default:
@@ -120,7 +121,7 @@ namespace ToidutellimusteSusteem
             }
         }
 
-        static void AvaAdminiMenüü(List<IValmistatav> saadavalTooted, string failiNimi)
+        static void AvaAdminiMenüü(Admin admin, List<Toode> saadavalTooted, string failiNimi)
         {
             while (true)
             {
@@ -170,11 +171,35 @@ namespace ToidutellimusteSusteem
             }
         }
 
-        static void LooToodeJaSalvestaFaili(List<IValmistatav> saadavalTooted, string failiNimi)
+        static void LooToodeJaSalvestaFaili(List<Toode> saadavalTooted, string failiNimi)
         {
             Console.Clear();
 
             Console.WriteLine("\n--- UUE TOOTE LOOMINE ---");
+            TooteTüüp? valitudTüüp = ValiTooteTüüp();
+
+            if (valitudTüüp == null)
+            {
+                Console.WriteLine("Tundmatu valik.");
+                return;
+            }
+
+            TooteTüüp tüüp = valitudTüüp.Value;
+            string nimi = KüsiTooteNimi(tüüp);
+            double hind = KüsiHind("Sisesta toote hind: ");
+
+            // Lisaandmete tähendus sõltub toote tüübist
+            int eriomadus = KüsiEriomadus(tüüp);
+
+            Toode uusToode = new Toode(nimi, tüüp, hind, eriomadus);
+
+            saadavalTooted.Add(uusToode);
+            FailiTöötlus.SalvestaToodeFaili(uusToode, failiNimi);
+            Console.WriteLine("Toode lisatud ja faili salvestatud.");
+        }
+
+        static TooteTüüp? ValiTooteTüüp()
+        {
             Console.WriteLine("1. Burger");
             Console.WriteLine("2. Pizza");
             Console.WriteLine("3. Sushi");
@@ -185,169 +210,101 @@ namespace ToidutellimusteSusteem
             if (!int.TryParse(Console.ReadLine(), out int valik))
             {
                 Console.WriteLine("Vigane sisend! Palun sisesta number.");
-                return;
+                return null;
             }
-
-            IValmistatav? uusToode = null;
 
             switch (valik)
             {
                 case 1:
-                    Console.Write("Sisesta burgeri nimi: ");
-                    string burgeriNimi = Console.ReadLine();
-
-                    if (string.IsNullOrWhiteSpace(burgeriNimi))
-                    {
-                        burgeriNimi = "Nimetu burger";
-                    }
-
-                    Console.Write("Sisesta burgeri hind: ");
-                    string burgeriHindTekst = Console.ReadLine();
-                    burgeriHindTekst = burgeriHindTekst.Replace(".", ",");
-
-                    if (!double.TryParse(burgeriHindTekst, out double burgeriHind))
-                    {
-                        Console.WriteLine("Vigane sisend! Palun sisesta number.");
-                        return;
-                    }
-
-                    Console.Write("Kas burger on juustuga? (jah/ei): ");
-                    string juustuVastus = Console.ReadLine().ToLower();
-                    bool juustuga = juustuVastus == "jah" || juustuVastus == "j";
-
-                    uusToode = new Burger(burgeriNimi, burgeriHind, juustuga);
-                    break;
+                    return TooteTüüp.Burger;
 
                 case 2:
-                    Console.Write("Sisesta pizza nimi: ");
-                    string pizzaNimi = Console.ReadLine();
-
-                    if (string.IsNullOrWhiteSpace(pizzaNimi))
-                    {
-                        pizzaNimi = "Nimetu pizza";
-                    }
-
-                    Console.Write("Sisesta pizza põhihind: ");
-                    string pizzaHindTekst = Console.ReadLine();
-                    pizzaHindTekst = pizzaHindTekst.Replace(".", ",");
-
-                    if (!double.TryParse(pizzaHindTekst, out double pizzaHind))
-                    {
-                        Console.WriteLine("Vigane sisend! Palun sisesta number.");
-                        return;
-                    }
-
-                    Console.Write("Sisesta pizza läbimõõt cm: ");
-
-                    if (!int.TryParse(Console.ReadLine(), out int läbimõõt))
-                    {
-                        Console.WriteLine("Vigane sisend! Palun sisesta täisarv.");
-                        return;
-                    }
-
-                    uusToode = new Pizza(pizzaNimi, pizzaHind, läbimõõt);
-                    break;
+                    return TooteTüüp.Pizza;
 
                 case 3:
-                    Console.Write("Sisesta sushi nimi: ");
-                    string sushiNimi = Console.ReadLine();
-
-                    if (string.IsNullOrWhiteSpace(sushiNimi))
-                    {
-                        sushiNimi = "Nimetu sushi";
-                    }
-
-                    Console.Write("Sisesta ühe tüki hind: ");
-                    string sushiHindTekst = Console.ReadLine();
-                    sushiHindTekst = sushiHindTekst.Replace(".", ",");
-
-                    if (!double.TryParse(sushiHindTekst, out double sushiHind))
-                    {
-                        Console.WriteLine("Vigane sisend! Palun sisesta number.");
-                        return;
-                    }
-
-                    Console.Write("Sisesta tükkide arv: ");
-
-                    if (!int.TryParse(Console.ReadLine(), out int tükkideArv))
-                    {
-                        Console.WriteLine("Vigane sisend! Palun sisesta täisarv.");
-                        return;
-                    }
-
-                    uusToode = new Sushi(sushiNimi, sushiHind, tükkideArv);
-                    break;
+                    return TooteTüüp.Sushi;
 
                 case 4:
-                    Console.Write("Sisesta joogi nimi: ");
-                    string joogiNimi = Console.ReadLine();
-
-                    if (string.IsNullOrWhiteSpace(joogiNimi))
-                    {
-                        joogiNimi = "Nimetu jook";
-                    }
-
-                    Console.Write("Sisesta joogi hind: ");
-                    string joogiHindTekst = Console.ReadLine();
-                    joogiHindTekst = joogiHindTekst.Replace(".", ",");
-
-                    if (!double.TryParse(joogiHindTekst, out double joogiHind))
-                    {
-                        Console.WriteLine("Vigane sisend! Palun sisesta number.");
-                        return;
-                    }
-
-                    Console.Write("Kas jook on gaseeritud? (jah/ei): ");
-                    string gaasiVastus = Console.ReadLine().ToLower();
-                    bool gaseeritud = gaasiVastus == "jah" || gaasiVastus == "j";
-
-                    uusToode = new Jook(joogiNimi, joogiHind, gaseeritud);
-                    break;
+                    return TooteTüüp.Jook;
 
                 case 5:
-                    Console.Write("Sisesta magustoidu nimi: ");
-                    string magustoiduNimi = Console.ReadLine();
-
-                    if (string.IsNullOrWhiteSpace(magustoiduNimi))
-                    {
-                        magustoiduNimi = "Nimetu magustoit";
-                    }
-
-                    Console.Write("Sisesta magustoidu hind: ");
-                    string magustoiduHindTekst = Console.ReadLine();
-                    magustoiduHindTekst = magustoiduHindTekst.Replace(".", ",");
-
-                    if (!double.TryParse(magustoiduHindTekst, out double magustoiduHind))
-                    {
-                        Console.WriteLine("Vigane sisend! Palun sisesta number.");
-                        return;
-                    }
-
-                    Console.Write("Sisesta kalorite arv: ");
-
-                    if (!int.TryParse(Console.ReadLine(), out int kalorid))
-                    {
-                        Console.WriteLine("Vigane sisend! Palun sisesta täisarv.");
-                        return;
-                    }
-
-                    uusToode = new Magustoit(magustoiduNimi, magustoiduHind, kalorid);
-                    break;
+                    return TooteTüüp.Magustoit;
 
                 default:
-                    Console.WriteLine("Tundmatu valik.");
-                    return;
-            }
-
-            if (uusToode != null)
-            {
-                saadavalTooted.Add(uusToode);
-                FailiTöötlus.SalvestaToodeFaili(uusToode, failiNimi);
-                Console.WriteLine("Toode lisatud ja faili salvestatud.");
+                    return null;
             }
         }
 
-        static void KoostaTellimus(List<IValmistatav> saadavalTooted, List<IValmistatav> tellimus)
+        static string KüsiTooteNimi(TooteTüüp tüüp)
+        {
+            string tüüpVäiksega = tüüp.ToString().ToLower();
+
+            Console.Write($"Sisesta {tüüpVäiksega} nimi: ");
+            string nimi = Console.ReadLine() ?? "";
+
+            if (string.IsNullOrWhiteSpace(nimi))
+            {
+                nimi = "Nimetu " + tüüpVäiksega;
+            }
+
+            return nimi;
+        }
+
+        static double KüsiHind(string tekst)
+        {
+            Console.Write(tekst);
+            string hindTekst = Console.ReadLine() ?? "";
+            hindTekst = hindTekst.Replace(".", ",");
+
+            if (!double.TryParse(hindTekst, out double hind))
+            {
+                throw new ArgumentException("Hind peab olema number.");
+            }
+
+            return hind;
+        }
+
+        static int KüsiEriomadus(TooteTüüp tüüp)
+        {
+            switch (tüüp)
+            {
+                case TooteTüüp.Burger:
+                    Console.Write("Kas burger on juustuga? (jah/ei): ");
+                    string juustuVastus = (Console.ReadLine() ?? "").ToLower();
+                    return juustuVastus == "jah" || juustuVastus == "j" ? 1 : 0;
+
+                case TooteTüüp.Pizza:
+                    return KüsiTäisarv("Sisesta pizza läbimõõt cm: ");
+
+                case TooteTüüp.Sushi:
+                    return KüsiTäisarv("Sisesta tükkide arv: ");
+
+                case TooteTüüp.Jook:
+                    Console.Write("Kas jook on gaseeritud? (jah/ei): ");
+                    string gaasiVastus = (Console.ReadLine() ?? "").ToLower();
+                    return gaasiVastus == "jah" || gaasiVastus == "j" ? 1 : 0;
+
+                case TooteTüüp.Magustoit:
+                    return KüsiTäisarv("Sisesta kalorite arv: ");
+
+                default:
+                    return 0;
+            }
+        }
+
+        static int KüsiTäisarv(string tekst)
+        {
+            Console.Write(tekst);
+
+            if (!int.TryParse(Console.ReadLine(), out int arv))
+            {
+                throw new ArgumentException("Sisestatud väärtus peab olema täisarv.");
+            }
+
+            return arv;
+        }
+
+        static void KoostaTellimus(List<Toode> saadavalTooted, Tellimus tellimus)
         {
             Console.Clear();
 
@@ -360,26 +317,11 @@ namespace ToidutellimusteSusteem
             while (true)
             {
                 Console.WriteLine("\n--- TELLIMUSE KOOSTAMINE ---");
-                Console.WriteLine($"Ostukorvis: {tellimus.Count} toodet");
+                Console.WriteLine($"Ostukorvis: {tellimus.ToodeteArv} toodet");
 
-                if (tellimus.Count > 0)
+                if (tellimus.ToodeteArv > 0)
                 {
-                    double ostukorviKokku = 0;
-
-                    Console.WriteLine("Ostukorvi sisu:");
-
-                    int jarjekorraNumber = 1;
-
-                    foreach (Toode ostukorviToode in tellimus)
-                    {
-                        double hind = ostukorviToode.ArvutaHind();
-                        ostukorviKokku += hind;
-
-                        Console.WriteLine($"{jarjekorraNumber}. {ostukorviToode.GetType().Name} \"{ostukorviToode.Nimi}\" - {hind:F2} €");
-                        jarjekorraNumber++;
-                    }
-
-                    Console.WriteLine($"Kokku: {ostukorviKokku:F2} €");
+                    KuvaOstukorviSisu(tellimus);
                 }
 
                 KuvaSaadavalTooted(saadavalTooted);
@@ -403,17 +345,31 @@ namespace ToidutellimusteSusteem
                     continue;
                 }
 
-                IValmistatav valitudToode = saadavalTooted[valik - 1];
-                tellimus.Add(valitudToode);
-
-                Toode toode = (Toode)valitudToode;
+                Toode valitudToode = saadavalTooted[valik - 1];
+                tellimus.LisaToode(valitudToode);
 
                 Console.Clear();
-                Console.WriteLine($">>> {toode.GetType().Name} \"{toode.Nimi}\" lisatud ostukorvi.");
+                Console.WriteLine($">>> {valitudToode.Tüüp} \"{valitudToode.Nimi}\" lisatud ostukorvi.");
             }
         }
 
-        static void KuvaSaadavalTooted(List<IValmistatav> saadavalTooted)
+        static void KuvaOstukorviSisu(Tellimus tellimus)
+        {
+            Console.WriteLine("Ostukorvi sisu:");
+
+            int järjekorraNumber = 1;
+
+            foreach (Toode toode in tellimus.Tooted)
+            {
+                double hind = toode.ArvutaHind();
+                Console.WriteLine($"{järjekorraNumber}. {toode.Tüüp} \"{toode.Nimi}\" - {hind:F2} €");
+                järjekorraNumber++;
+            }
+
+            Console.WriteLine($"Kokku: {tellimus.ArvutaKoguhind():F2} €");
+        }
+
+        static void KuvaSaadavalTooted(List<Toode> saadavalTooted)
         {
             Console.WriteLine("\n--- SAADAVAL TOOTED ---");
 
@@ -426,56 +382,47 @@ namespace ToidutellimusteSusteem
             for (int i = 0; i < saadavalTooted.Count; i++)
             {
                 Console.Write($"{i + 1}. ");
-
-                if (saadavalTooted[i] is Toode toode)
-                {
-                    toode.Kirjelda(true);
-                }
+                saadavalTooted[i].Kirjelda(true);
             }
         }
 
-        static void KuvaTellimus(List<IValmistatav> tellimus)
+        static void KuvaTellimus(Tellimus tellimus)
         {
             Console.WriteLine("\n--- TELLIMUSE TULEMUSED ---");
 
-            if (tellimus.Count == 0)
+            if (tellimus.ToodeteArv == 0)
             {
                 Console.WriteLine("Tellimus on tühi.");
                 return;
             }
 
-            double koguhind = KuvaTellimuseTooted(tellimus);
-            KuvaTellimuseKokkuvote(koguhind);
+            KuvaTellimuseTooted(tellimus);
+            KuvaTellimuseKokkuvote(tellimus);
         }
 
-        static double KuvaTellimuseTooted(List<IValmistatav> tellimus)
+        static void KuvaTellimuseTooted(Tellimus tellimus)
         {
-            double koguhind = 0;
             int järjekorraNumber = 1;
 
-            foreach (Toode toit in tellimus)
+            foreach (Toode toit in tellimus.Tooted)
             {
                 Console.WriteLine($"\n{järjekorraNumber}. toode");
                 järjekorraNumber++;
-
 
                 toit.Kirjelda();
                 toit.Valmista();
 
                 double hind = toit.ArvutaHind();
-                koguhind += hind;
-
                 Console.WriteLine($"Hind kokku: {hind:F2} €");
             }
-
-            return koguhind;
         }
 
-        static double KuvaTellimuseKokkuvote(double koguhind)
+        static double KuvaTellimuseKokkuvote(Tellimus tellimus)
         {
-            int soodustusProtsent = LeiaSoodustusProtsent(koguhind);
-            double soodustusSumma = ArvutaSoodustusSumma(koguhind, soodustusProtsent);
-            double lõpphind = koguhind - soodustusSumma;
+            double koguhind = tellimus.ArvutaKoguhind();
+            int soodustusProtsent = tellimus.LeiaSoodustusProtsent();
+            double soodustusSumma = tellimus.ArvutaSoodustusSumma();
+            double lõpphind = tellimus.ArvutaLõpphind();
 
             Console.WriteLine($"\nTellimuse vahesumma: {koguhind:F2} €");
 
@@ -493,130 +440,32 @@ namespace ToidutellimusteSusteem
             return lõpphind;
         }
 
-        static int LeiaSoodustusProtsent(double koguhind)
-        {
-            if (koguhind >= 60)
-            {
-                return 15;
-            }
-
-            if (koguhind >= 40)
-            {
-                return 10;
-            }
-
-            if (koguhind >= 25)
-            {
-                return 5;
-            }
-
-            return 0;
-        }
-
-        static double ArvutaSoodustusSumma(double koguhind, int soodustusProtsent)
-        {
-            return koguhind * soodustusProtsent / 100;
-        }
-
-        static void VormistaJaMaksaTellimus(List<IValmistatav> tellimus)
+        static void VormistaJaMaksaTellimus(Klient klient, MakseTeenindus makseTeenindus)
         {
             Console.Clear();
             Console.WriteLine("\n--- TELLIMUSE VORMISTAMINE ---");
 
-            if (tellimus.Count == 0)
+            if (klient.Tellimus.ToodeteArv == 0)
             {
                 Console.WriteLine("Tellimus on tühi. Lisa enne maksmist mõni toode.");
                 return;
             }
 
-            double koguhind = KuvaTellimuseTooted(tellimus);
-            double makstavSumma = KuvaTellimuseKokkuvote(koguhind);
+            KuvaTellimuseTooted(klient.Tellimus);
+            double makstavSumma = KuvaTellimuseKokkuvote(klient.Tellimus);
 
-            Console.WriteLine("\nVali makseviis:");
-            Console.WriteLine("1. Pangakaart");
-            Console.WriteLine("2. Sularaha");
-            Console.WriteLine("0. Katkesta");
-            Console.Write("Sisesta valik: ");
-
-            if (!int.TryParse(Console.ReadLine(), out int valik))
-            {
-                Console.WriteLine("Vigane sisend! Palun sisesta number.");
-                return;
-            }
-
-            bool makseÕnnestus = false;
-
-            switch (valik)
-            {
-                case 1:
-                    makseÕnnestus = MaksaKaardiga(makstavSumma);
-                    break;
-
-                case 2:
-                    makseÕnnestus = MaksaSularahas(makstavSumma);
-                    break;
-
-                case 0:
-                    Console.WriteLine("Tellimuse vormistamine katkestati.");
-                    return;
-
-                default:
-                    Console.WriteLine("Tundmatu makseviis.");
-                    return;
-            }
+            bool makseÕnnestus = makseTeenindus.Maksa(makstavSumma);
 
             if (makseÕnnestus)
             {
                 Console.WriteLine("\nTellimus on makstud ja kööki saadetud.");
                 Console.WriteLine("Aitäh ostu eest!");
-                tellimus.Clear();
+                klient.Tellimus.Tühjenda();
             }
             else
             {
                 Console.WriteLine("\nMakse jäi lõpetamata. Tellimus jäi ostukorvi alles.");
             }
-        }
-
-        static bool MaksaKaardiga(double makstavSumma)
-        {
-            Console.WriteLine($"\nKaardimakse summa: {makstavSumma:F2} €");
-            Console.Write("Kinnita kaardimakse (jah/ei): ");
-            string vastus = Console.ReadLine().ToLower();
-
-            if (vastus == "jah" || vastus == "j")
-            {
-                Console.WriteLine("Kaardimakse õnnestus.");
-                return true;
-            }
-
-            Console.WriteLine("Kaardimakse katkestati.");
-            return false;
-        }
-
-        static bool MaksaSularahas(double makstavSumma)
-        {
-            Console.WriteLine($"\nSularahas tuleb tasuda: {makstavSumma:F2} €");
-            Console.Write("Sisesta kliendilt saadud summa: ");
-            string saadudRahaTekst = Console.ReadLine();
-            saadudRahaTekst = saadudRahaTekst.Replace(".", ",");
-
-            if (!double.TryParse(saadudRahaTekst, out double saadudRaha))
-            {
-                Console.WriteLine("Vigane sisend! Palun sisesta number.");
-                return false;
-            }
-
-            if (saadudRaha < makstavSumma)
-            {
-                double puuduvSumma = makstavSumma - saadudRaha;
-                Console.WriteLine($"Raha ei piisa. Puudu on {puuduvSumma:F2} €.");
-                return false;
-            }
-
-            double tagasiraha = saadudRaha - makstavSumma;
-            Console.WriteLine($"Makse vastu võetud. Tagasiraha: {tagasiraha:F2} €");
-
-            return true;
         }
     }
 }
