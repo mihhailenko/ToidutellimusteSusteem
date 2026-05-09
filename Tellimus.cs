@@ -6,6 +6,8 @@ namespace ToidutellimusteSusteem
     {
         private List<Toode> tooted = new List<Toode>();
 
+        public Makse? Makse { get; set; }
+
         public List<Toode> Tooted
         {
             get { return tooted; }
@@ -24,6 +26,17 @@ namespace ToidutellimusteSusteem
         public void Tühjenda()
         {
             tooted.Clear();
+            Makse = null;
+        }
+
+        public void LisaMakse(Makse makse)
+        {
+            Makse = makse;
+        }
+
+        public bool OnMakstud()
+        {
+            return Makse != null && Makse.Staatus == MakseStaatus.Õnnestus;
         }
 
         public double ArvutaKoguhind()

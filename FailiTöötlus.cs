@@ -54,12 +54,12 @@ namespace ToidutellimusteSusteem
                 {
                     if (int.TryParse(osad[3], out int eriomadus))
                     {
-                        tooted.Add(new Toode(nimi, tüüp, hind, eriomadus));
+                        tooted.Add(new Toode(nimi, tüüp, hind, TooteEriomadus.Loo(tüüp, eriomadus)));
                     }
                     else if (bool.TryParse(osad[3], out bool jahVõiEi))
                     {
                         int väärtus = jahVõiEi ? 1 : 0;
-                        tooted.Add(new Toode(nimi, tüüp, hind, väärtus));
+                        tooted.Add(new Toode(nimi, tüüp, hind, TooteEriomadus.Loo(tüüp, väärtus)));
                     }
                 }
                 catch (ArgumentException)

@@ -12,7 +12,7 @@ namespace ToidutellimusteSusteem
     public class Toode : IValmistatav
     {
         private double hind;
-        private int eriomadus;
+        private TooteEriomadus eriomadus = TooteEriomadus.Loo(TooteTüüp.Burger, 0);
 
         public string Nimi { get; set; }
         public TooteTüüp Tüüp { get; set; }
@@ -33,13 +33,13 @@ namespace ToidutellimusteSusteem
             }
         }
 
-        // Eriomaduse tähendus sõltub toote tüübist: juust, läbimõõt, tükid, gaas või kalorid
-        public int Eriomadus
+        // Eriomaduse sisu sõltub toote tüübist: juust, läbimõõt, tükid, gaas või kalorid
+        public TooteEriomadus Eriomadus
         {
             get { return eriomadus; }
             set
             {
-                if (KasEriomadusSobib(value))
+                if (KasEriomadusSobib(value.Väärtus))
                 {
                     eriomadus = value;
                 }
@@ -50,7 +50,7 @@ namespace ToidutellimusteSusteem
             }
         }
 
-        public Toode(string nimi, TooteTüüp tüüp, double hind, int eriomadus)
+        public Toode(string nimi, TooteTüüp tüüp, double hind, TooteEriomadus eriomadus)
         {
             Nimi = nimi;
             Tüüp = tüüp;
@@ -61,7 +61,7 @@ namespace ToidutellimusteSusteem
         public void Kirjelda(bool kuvaHind = false)
         {
             string hindTekst = kuvaHind ? $" | Hind: {ArvutaHind():F2} €" : "";
-            Console.WriteLine($"{Tüüp}: {Nimi} | {KoostaEriomaduseTekst()}{hindTekst}");
+            Console.WriteLine($"{Tüüp}: {Nimi} | {Eriomadus.KoostaTekst()}{KoostaLisatekst()}{hindTekst}");
         }
 
         public void Valmista()
@@ -69,7 +69,7 @@ namespace ToidutellimusteSusteem
             switch (Tüüp)
             {
                 case TooteTüüp.Burger:
-                    if (Eriomadus == 1)
+                    if (Eriomadus.Väärtus == 1)
                     {
                         Console.WriteLine($"Valmistame burgerit {Nimi}: kukkel, liha, salat ja juust.");
                     }
@@ -88,7 +88,7 @@ namespace ToidutellimusteSusteem
                     break;
 
                 case TooteTüüp.Jook:
-                    if (Eriomadus == 1)
+                    if (Eriomadus.Väärtus == 1)
                     {
                         Console.WriteLine($"Valmistame joogi {Nimi}: jahutame ja lisame gaasi.");
                     }
@@ -110,20 +110,20 @@ namespace ToidutellimusteSusteem
             {
                 case TooteTüüp.Burger:
                 case TooteTüüp.Jook:
-                    if (Eriomadus == 1)
+                    if (Eriomadus.Väärtus == 1)
                     {
                         return Hind + 0.50;
                     }
                     return Hind;
 
                 case TooteTüüp.Pizza:
-                    return Hind + Eriomadus * 0.15;
+                    return Hind + Eriomadus.Väärtus * 0.15;
 
                 case TooteTüüp.Sushi:
-                    return Hind * Eriomadus;
+                    return Hind * Eriomadus.Väärtus;
 
                 case TooteTüüp.Magustoit:
-                    if (Eriomadus > 500)
+                    if (Eriomadus.Väärtus > 500)
                     {
                         return Hind * 1.2;
                     }
@@ -134,24 +134,12 @@ namespace ToidutellimusteSusteem
             }
         }
 
-        public string KoostaEriomaduseTekst()
+        public string KoostaLisatekst()
         {
             switch (Tüüp)
             {
-                case TooteTüüp.Burger:
-                    return $"Juustuga: {(Eriomadus == 1 ? "jah" : "ei")}";
-
-                case TooteTüüp.Pizza:
-                    return $"Läbimõõt: {Eriomadus} cm";
-
                 case TooteTüüp.Sushi:
-                    return $"Tükke: {Eriomadus} | Ühe tüki hind: {Hind:F2} €";
-
-                case TooteTüüp.Jook:
-                    return $"Gaseeritud: {(Eriomadus == 1 ? "jah" : "ei")}";
-
-                case TooteTüüp.Magustoit:
-                    return $"Kalorid: {Eriomadus} kcal";
+                    return $" | Ühe tüki hind: {Hind:F2} €";
 
                 default:
                     return "";
@@ -160,7 +148,7 @@ namespace ToidutellimusteSusteem
 
         public string KoostaFailiRida()
         {
-            return $"{Tüüp};{Nimi};{Hind.ToString().Replace(",", ".")};{Eriomadus}";
+            return $"{Tüüp};{Nimi};{Hind.ToString().Replace(",", ".")};{Eriomadus.Väärtus}";
         }
 
         private bool KasEriomadusSobib(int väärtus)

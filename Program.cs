@@ -16,8 +16,8 @@ namespace ToidutellimusteSusteem
             List<Toode> saadavalTooted = FailiTöötlus.LaeTootedFailist(failiNimi);
 
             // Kasutajad hoiavad rolliga seotud infot ja kliendi tellimust
-            Klient klient = new Klient("Klient");
-            Admin admin = new Admin("Admin");
+            Klient klient = new Klient("Darja");
+            Admin admin = new Admin("Artjom");
             MakseTeenindus makseTeenindus = new MakseTeenindus();
 
             while (true)
@@ -185,11 +185,28 @@ namespace ToidutellimusteSusteem
             }
 
             TooteTüüp tüüp = valitudTüüp.Value;
-            string nimi = KüsiTooteNimi(tüüp);
-            double hind = KüsiHind("Sisesta toote hind: ");
+            string tüüpVäiksega = tüüp.ToString().ToLower();
+
+            Console.Write($"Sisesta {tüüpVäiksega} nimi: ");
+            string nimi = Console.ReadLine() ?? "";
+
+            if (string.IsNullOrWhiteSpace(nimi))
+            {
+                nimi = "Nimetu " + tüüpVäiksega;
+            }
+
+            Console.Write("Sisesta toote hind: ");
+            string hindTekst = Console.ReadLine() ?? "";
+            hindTekst = hindTekst.Replace(".", ",");
+
+            if (!double.TryParse(hindTekst, out double hind))
+            {
+                Console.WriteLine("Vigane sisend! Palun sisesta number.");
+                return;
+            }
 
             // Lisaandmete tähendus sõltub toote tüübist
-            int eriomadus = KüsiEriomadus(tüüp);
+            TooteEriomadus eriomadus = KüsiEriomadus(tüüp);
 
             Toode uusToode = new Toode(nimi, tüüp, hind, eriomadus);
 
@@ -235,73 +252,55 @@ namespace ToidutellimusteSusteem
             }
         }
 
-        static string KüsiTooteNimi(TooteTüüp tüüp)
-        {
-            string tüüpVäiksega = tüüp.ToString().ToLower();
-
-            Console.Write($"Sisesta {tüüpVäiksega} nimi: ");
-            string nimi = Console.ReadLine() ?? "";
-
-            if (string.IsNullOrWhiteSpace(nimi))
-            {
-                nimi = "Nimetu " + tüüpVäiksega;
-            }
-
-            return nimi;
-        }
-
-        static double KüsiHind(string tekst)
-        {
-            Console.Write(tekst);
-            string hindTekst = Console.ReadLine() ?? "";
-            hindTekst = hindTekst.Replace(".", ",");
-
-            if (!double.TryParse(hindTekst, out double hind))
-            {
-                throw new ArgumentException("Hind peab olema number.");
-            }
-
-            return hind;
-        }
-
-        static int KüsiEriomadus(TooteTüüp tüüp)
+        static TooteEriomadus KüsiEriomadus(TooteTüüp tüüp)
         {
             switch (tüüp)
             {
                 case TooteTüüp.Burger:
                     Console.Write("Kas burger on juustuga? (jah/ei): ");
                     string juustuVastus = (Console.ReadLine() ?? "").ToLower();
-                    return juustuVastus == "jah" || juustuVastus == "j" ? 1 : 0;
+                    int juustuga = juustuVastus == "jah" || juustuVastus == "j" ? 1 : 0;
+                    return TooteEriomadus.Loo(tüüp, juustuga);
 
                 case TooteTüüp.Pizza:
-                    return KüsiTäisarv("Sisesta pizza läbimõõt cm: ");
+                    Console.Write("Sisesta pizza läbimõõt cm: ");
+
+                    if (!int.TryParse(Console.ReadLine(), out int läbimõõt))
+                    {
+                        throw new ArgumentException("Sisestatud väärtus peab olema täisarv.");
+                    }
+
+                    return TooteEriomadus.Loo(tüüp, läbimõõt);
 
                 case TooteTüüp.Sushi:
-                    return KüsiTäisarv("Sisesta tükkide arv: ");
+                    Console.Write("Sisesta tükkide arv: ");
+
+                    if (!int.TryParse(Console.ReadLine(), out int tükkideArv))
+                    {
+                        throw new ArgumentException("Sisestatud väärtus peab olema täisarv.");
+                    }
+
+                    return TooteEriomadus.Loo(tüüp, tükkideArv);
 
                 case TooteTüüp.Jook:
                     Console.Write("Kas jook on gaseeritud? (jah/ei): ");
                     string gaasiVastus = (Console.ReadLine() ?? "").ToLower();
-                    return gaasiVastus == "jah" || gaasiVastus == "j" ? 1 : 0;
+                    int gaseeritud = gaasiVastus == "jah" || gaasiVastus == "j" ? 1 : 0;
+                    return TooteEriomadus.Loo(tüüp, gaseeritud);
 
                 case TooteTüüp.Magustoit:
-                    return KüsiTäisarv("Sisesta kalorite arv: ");
+                    Console.Write("Sisesta kalorite arv: ");
+
+                    if (!int.TryParse(Console.ReadLine(), out int kalorid))
+                    {
+                        throw new ArgumentException("Sisestatud väärtus peab olema täisarv.");
+                    }
+
+                    return TooteEriomadus.Loo(tüüp, kalorid);
 
                 default:
-                    return 0;
+                    return TooteEriomadus.Loo(tüüp, 0);
             }
-        }
-
-        static int KüsiTäisarv(string tekst)
-        {
-            Console.Write(tekst);
-
-            if (!int.TryParse(Console.ReadLine(), out int arv))
-            {
-                throw new ArgumentException("Sisestatud väärtus peab olema täisarv.");
-            }
-
-            return arv;
         }
 
         static void KoostaTellimus(List<Toode> saadavalTooted, Tellimus tellimus)
@@ -454,9 +453,10 @@ namespace ToidutellimusteSusteem
             KuvaTellimuseTooted(klient.Tellimus);
             double makstavSumma = KuvaTellimuseKokkuvote(klient.Tellimus);
 
-            bool makseÕnnestus = makseTeenindus.Maksa(makstavSumma);
+            Makse makse = makseTeenindus.Maksa(makstavSumma);
+            klient.Tellimus.LisaMakse(makse);
 
-            if (makseÕnnestus)
+            if (klient.Tellimus.OnMakstud())
             {
                 Console.WriteLine("\nTellimus on makstud ja kööki saadetud.");
                 Console.WriteLine("Aitäh ostu eest!");
